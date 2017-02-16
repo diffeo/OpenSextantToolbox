@@ -19,51 +19,31 @@ RUN yum install -y \
       zip \
  && yum clean all
 
-# Get a tagged release of OpenSextantToolbox
-ENV OST_VERSION=2.2.6 GAZDATA_VERSION=20141229 OST_COMMIT=661b14d928c3313a6c3be4905727f38c145df19f
-
-RUN wget -O ost.tar.gz https://github.com/OpenSextant/OpenSextantToolbox/archive/${OST_COMMIT}.tar.gz \
- && tar xzf ost.tar.gz \
- && rm ost.tar.gz
-
-# ant is broken with open jdk 1.8.
-# We need to patch `build-classpath` and create some directories.
-# ADD ant-openjdk-1.8.0.patch /
-# RUN cd / \
-# && yum install -y patch \
-# && patch -p1 < ant-openjdk-1.8.0.patch \
-# && mkdir /usr/share/java-1.8.0 \
-# && mkdir /usr/lib/java-1.8.0
-
 # Make ant detect the right Java version.
 ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk.x86_64
 RUN test -d $JAVA_HOME
 
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
-&& mkdir LanguageResources/resources/geoGazetteer/ 
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
-&& wget https://github.com/OpenSextant/Gazetteer/releases/download/v20160717/opensextant-gazetteer.zip 
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
-&& unzip opensextant-gazetteer.zip -d LanguageResources/resources/geoGazetteer/ \
-&& ls -lah LanguageResources/resources/geoGazetteer/ 
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
-&& mkdir build \
-&& mv opensextant-gazetteer.zip build/
+# Get a tagged release of OpenSextantToolbox
+ENV OST_VERSION=2.2.6 GAZDATA_VERSION=20141229 OST_COMMIT=661b14d928c3313a6c3be4905727f38c145df19f
 
-# Build and unpack the release
-# Note that the final zip file version includes a date stamp
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
-&& ls -lah 
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
-&& sed -ie 's/MergedGazetteer_SMALL.txt/MergedGazetteer.txt/g' build.xml 
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
-&& ant -verbose release 
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
-&& ls -lah
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
- && unzip opensextant-toolbox-3.0.zip 
-RUN cd OpenSextantToolbox-${OST_COMMIT}/ \
- && ant clean
+RUN wget -O ost.tar.gz https://github.com/OpenSextant/OpenSextantToolbox/archive/${OST_COMMIT}.tar.gz \
+      && tar xzf ost.tar.gz \
+      && rm ost.tar.gz \
+      && cd OpenSextantToolbox-${OST_COMMIT}/ \
+      && mkdir LanguageResources/resources/geoGazetteer/ \
+      && wget https://github.com/OpenSextant/Gazetteer/releases/download/v20160717/opensextant-gazetteer.zip \
+      && unzip opensextant-gazetteer.zip -d LanguageResources/resources/geoGazetteer/ \
+      && ls -lah LanguageResources/resources/geoGazetteer/ \
+      && mkdir build \
+      && mv opensextant-gazetteer.zip build/ \
+      && ls -lah \
+      && sed -ie 's/MergedGazetteer_SMALL.txt/MergedGazetteer.txt/g' build.xml \
+      && ant -verbose release \
+      && ls -lah \
+      && unzip opensextant-toolbox-3.0.zip \
+      && ant clean \
+      && rm opensextant-toolbox-3.0.zip \
+      && find . -type d -maxdepth 1 ! -name 'opensextant-toolbox-3.0*' ! -iname '.*' -exec rm -r -f {} +
 
 # Record build number
 # COPY container-version /etc/
